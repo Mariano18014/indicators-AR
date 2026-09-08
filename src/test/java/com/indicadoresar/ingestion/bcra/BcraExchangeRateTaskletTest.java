@@ -41,7 +41,7 @@ class BcraExchangeRateTaskletTest {
 
     @Test
     void createsNewValueWhenNoneExists() throws Exception {
-        BcraExchangeRate rate = new BcraExchangeRate(LocalDate.of(2026, 9, 7), new BigDecimal("1210.75"));
+        BcraRate rate = new BcraRate(LocalDate.of(2026, 9, 7), new BigDecimal("1210.75"));
         when(indicatorRepository.findByCode("DOLAR_OFICIAL")).thenReturn(Optional.of(indicator));
         when(bcraClient.fetchExchangeRate()).thenReturn(rate);
         when(indicatorValueRepository.findByIndicatorIdAndDate(1L, rate.date()))
@@ -60,7 +60,7 @@ class BcraExchangeRateTaskletTest {
     @Test
     void updatesExistingValueWhenAlreadyExists() throws Exception {
         LocalDate date = LocalDate.of(2026, 9, 7);
-        BcraExchangeRate rate = new BcraExchangeRate(date, new BigDecimal("1220.00"));
+        BcraRate rate = new BcraRate(date, new BigDecimal("1220.00"));
         IndicatorValue existing = new IndicatorValue(indicator, date, new BigDecimal("1210.75"), java.time.Instant.now());
 
         when(indicatorRepository.findByCode("DOLAR_OFICIAL")).thenReturn(Optional.of(indicator));

@@ -14,19 +14,24 @@ import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.indicadoresar.TestBatchConfig;
 import org.mockito.Mockito;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(TestBatchConfig.class)
 class BcraExchangeRateJobIntegrationTest extends PostgresContainerSupport {
 
     @Autowired
     private JobLauncherTestUtils jobLauncherTestUtils;
 
     @Autowired
+    @Qualifier("bcraExchangeRateJob")
     private Job bcraExchangeRateJob;
 
     @Autowired
@@ -38,8 +43,8 @@ class BcraExchangeRateJobIntegrationTest extends PostgresContainerSupport {
     @Test
     void jobInsertsValueAndIsIdempotentOnSecondRun() throws Exception {
         LocalDate date = LocalDate.of(2026, 9, 7);
-        BcraExchangeRate firstRate = new BcraExchangeRate(date, new BigDecimal("1210.7500"));
-        BcraExchangeRate secondRate = new BcraExchangeRate(date, new BigDecimal("1220.0000"));
+        BcraRate firstRate = new BcraRate(date, new BigDecimal("1210.7500"));
+        BcraRate secondRate = new BcraRate(date, new BigDecimal("1220.0000"));
 
         Mockito.when(bcraClient.fetchExchangeRate()).thenReturn(firstRate).thenReturn(secondRate);
 

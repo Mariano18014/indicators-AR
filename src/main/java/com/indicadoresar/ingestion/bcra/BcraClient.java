@@ -26,21 +26,29 @@ public class BcraClient {
         this.objectMapper = objectMapper;
     }
 
-    public BcraExchangeRate fetchExchangeRate() {
-        String rawResponse = callBcraApi();
-        return parseExchangeRateResponse(rawResponse);
+    public BcraRate fetchExchangeRate() {
+        return fetchByVariable(properties.getExchangeRateVariable(), "exchange rate");
     }
 
-    private String callBcraApi() {
-        String path = buildExchangeRatePath();
-        log.info("Fetching BCRA exchange rate from {}", path);
+    public BcraRate fetchInterestRate() {
+        return fetchByVariable(properties.getInterestRateVariable(), "interest rate");
+    }
+
+    private BcraRate fetchByVariable(String variable, String label) {
+        String rawResponse = callBcraApi(variable, label);
+        return parseResponse(rawResponse);
+    }
+
+    private String callBcraApi(String variable, String label) {
+        String path = buildPath(variable);
+        log.info("Fetching BCRA {} from {}", label, path);
         String response = restClient.get().uri(path).retrieve().body(String.class);
         validateResponse(response);
         return response;
     }
 
-    private String buildExchangeRatePath() {
-        return "/estadisticas/v3.0/monetarias/" + properties.getExchangeRateVariable();
+    private String buildPath(String variable) {
+        return "/estadisticas/v3.0/monetarias/" + variable;
     }
 
     private void validateResponse(String response) {
@@ -49,11 +57,19 @@ public class BcraClient {
         }
     }
 
-    BcraExchangeRate parseExchangeRateResponse(String rawResponse) {
+    BcraRate parseExchangeRateResponse(String rawResponse) {
+        return parseResponse(rawResponse);
+    }
+
+    BcraRate parseInterestRateResponse(String rawResponse) {
+        return parseResponse(rawResponse);
+    }
+
+    BcraRate parseResponse(String rawResponse) {
         JsonNode root = parseJson(rawResponse);
         JsonNode results = extractResultsArray(root);
         JsonNode latestEntry = findLatestEntry(results);
-        return buildExchangeRate(latestEntry);
+        return buildRate(latestEntry);
     }
 
     private JsonNode parseJson(String rawResponse) {
@@ -77,10 +93,15 @@ public class BcraClient {
         return results.get(results.size() - 1);
     }
 
-    private BcraExchangeRate buildExchangeRate(JsonNode entry) {
+    private BcraRate buildRate(JsonNode entry) {
         LocalDate date = extractDate(entry);
         BigDecimal value = extractValue(entry);
-        return new BcraExchangeRate(date, value);
+        return new BcraRate(date, value);
+    }
+
+    private BcraExchangeRate buildExchangeRate(JsonNode entry) {
+        BcraRate rate = buildRate(entry);
+        return new BcraExchangeRate(rate.date(), rate.value());
     }
 
     private LocalDate extractDate(JsonNode entry) {

@@ -36,7 +36,7 @@ class BcraClientTest {
                 }
                 """;
 
-        BcraExchangeRate result = bcraClient.parseExchangeRateResponse(json);
+        BcraRate result = bcraClient.parseExchangeRateResponse(json);
 
         assertThat(result.date()).isEqualTo(LocalDate.of(2026, 9, 7));
         assertThat(result.value()).isEqualByComparingTo(new BigDecimal("1210.75"));
@@ -53,7 +53,7 @@ class BcraClientTest {
                 }
                 """;
 
-        BcraExchangeRate result = bcraClient.parseExchangeRateResponse(json);
+        BcraRate result = bcraClient.parseExchangeRateResponse(json);
 
         assertThat(result.date()).isEqualTo(LocalDate.of(2026, 9, 7));
         assertThat(result.value()).isEqualByComparingTo(new BigDecimal("1210.75"));

@@ -38,7 +38,7 @@ public class BcraExchangeRateTasklet implements Tasklet {
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
         log.info("Starting BCRA exchange rate ingestion");
         Indicator indicator = findIndicator();
-        BcraExchangeRate exchangeRate = fetchExchangeRate();
+        BcraRate exchangeRate = fetchExchangeRate();
         saveIndicatorValue(indicator, exchangeRate);
         log.info("Finished BCRA exchange rate ingestion for date {}", exchangeRate.date());
         return RepeatStatus.FINISHED;
@@ -50,11 +50,11 @@ public class BcraExchangeRateTasklet implements Tasklet {
                 .orElseThrow(() -> new ResourceNotFoundException("Indicator not found: " + DOLAR_OFICIAL_CODE));
     }
 
-    private BcraExchangeRate fetchExchangeRate() {
+    private BcraRate fetchExchangeRate() {
         return bcraClient.fetchExchangeRate();
     }
 
-    private void saveIndicatorValue(Indicator indicator, BcraExchangeRate exchangeRate) {
+    private void saveIndicatorValue(Indicator indicator, BcraRate exchangeRate) {
         Optional<IndicatorValue> existing = findExistingValue(indicator, exchangeRate);
         if (existing.isPresent()) {
             updateExistingValue(existing.get(), exchangeRate);
@@ -63,13 +63,12 @@ public class BcraExchangeRateTasklet implements Tasklet {
         }
     }
 
-    private Optional<IndicatorValue> findExistingValue(
-            Indicator indicator, BcraExchangeRate exchangeRate) {
+    private Optional<IndicatorValue> findExistingValue(Indicator indicator, BcraRate exchangeRate) {
         return indicatorValueRepository.findByIndicatorIdAndDate(
                 indicator.getId(), exchangeRate.date());
     }
 
-    private void updateExistingValue(IndicatorValue existing, BcraExchangeRate exchangeRate) {
+    private void updateExistingValue(IndicatorValue existing, BcraRate exchangeRate) {
         log.info(
                 "Updating existing value for date {} from {} to {}",
                 exchangeRate.date(),
@@ -79,7 +78,7 @@ public class BcraExchangeRateTasklet implements Tasklet {
         indicatorValueRepository.save(existing);
     }
 
-    private void createNewValue(Indicator indicator, BcraExchangeRate exchangeRate) {
+    private void createNewValue(Indicator indicator, BcraRate exchangeRate) {
         log.info("Creating new value for date {} value {}", exchangeRate.date(), exchangeRate.value());
         IndicatorValue newValue =
                 new IndicatorValue(indicator, exchangeRate.date(), exchangeRate.value(), Instant.now());
