@@ -6,6 +6,7 @@ import com.indicadoresar.support.PostgresContainerSupport;
 import com.indicadoresar.values.IndicatorValueRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.job.Job;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.indicadoresar.TestBatchConfig;
@@ -25,6 +27,7 @@ import org.mockito.Mockito;
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(TestBatchConfig.class)
+@DirtiesContext
 class BcraInterestRateJobIntegrationTest extends PostgresContainerSupport {
 
     @Autowired
@@ -39,6 +42,15 @@ class BcraInterestRateJobIntegrationTest extends PostgresContainerSupport {
 
     @MockitoBean
     private BcraClient bcraClient;
+
+    @BeforeEach
+    void cleanDatabase() {
+        cleanIndicatorValues();
+    }
+
+    private void cleanIndicatorValues() {
+        indicatorValueRepository.deleteAll();
+    }
 
     @Test
     void jobInsertsValueAndIsIdempotentOnSecondRun() throws Exception {
