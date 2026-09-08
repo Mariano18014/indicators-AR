@@ -3,10 +3,7 @@ package com.indicadoresar.ingestion.bcra;
 import com.indicadoresar.common.exception.ResourceNotFoundException;
 import com.indicadoresar.indicators.Indicator;
 import com.indicadoresar.indicators.IndicatorRepository;
-import com.indicadoresar.values.IndicatorValue;
-import com.indicadoresar.values.IndicatorValueRepository;
-import java.time.Instant;
-import java.util.Optional;
+import com.indicadoresar.values.IndicatorValueService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.step.StepContribution;
@@ -23,15 +20,15 @@ public class BcraExchangeRateTasklet implements Tasklet {
 
     private final BcraClient bcraClient;
     private final IndicatorRepository indicatorRepository;
-    private final IndicatorValueRepository indicatorValueRepository;
+    private final IndicatorValueService indicatorValueService;
 
     public BcraExchangeRateTasklet(
             BcraClient bcraClient,
             IndicatorRepository indicatorRepository,
-            IndicatorValueRepository indicatorValueRepository) {
+            IndicatorValueService indicatorValueService) {
         this.bcraClient = bcraClient;
         this.indicatorRepository = indicatorRepository;
-        this.indicatorValueRepository = indicatorValueRepository;
+        this.indicatorValueService = indicatorValueService;
     }
 
     @Override
@@ -55,33 +52,6 @@ public class BcraExchangeRateTasklet implements Tasklet {
     }
 
     private void saveIndicatorValue(Indicator indicator, BcraRate exchangeRate) {
-        Optional<IndicatorValue> existing = findExistingValue(indicator, exchangeRate);
-        if (existing.isPresent()) {
-            updateExistingValue(existing.get(), exchangeRate);
-        } else {
-            createNewValue(indicator, exchangeRate);
-        }
-    }
-
-    private Optional<IndicatorValue> findExistingValue(Indicator indicator, BcraRate exchangeRate) {
-        return indicatorValueRepository.findByIndicatorIdAndDate(
-                indicator.getId(), exchangeRate.date());
-    }
-
-    private void updateExistingValue(IndicatorValue existing, BcraRate exchangeRate) {
-        log.info(
-                "Updating existing value for date {} from {} to {}",
-                exchangeRate.date(),
-                existing.getValue(),
-                exchangeRate.value());
-        existing.updateValue(exchangeRate.value(), Instant.now());
-        indicatorValueRepository.save(existing);
-    }
-
-    private void createNewValue(Indicator indicator, BcraRate exchangeRate) {
-        log.info("Creating new value for date {} value {}", exchangeRate.date(), exchangeRate.value());
-        IndicatorValue newValue =
-                new IndicatorValue(indicator, exchangeRate.date(), exchangeRate.value(), Instant.now());
-        indicatorValueRepository.save(newValue);
+        indicatorValueService.saveOrUpdate(indicator, exchangeRate.date(), exchangeRate.value());
     }
 }

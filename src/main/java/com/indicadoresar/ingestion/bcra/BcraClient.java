@@ -107,11 +107,6 @@ public class BcraClient {
         return new BcraRate(date, value);
     }
 
-    private BcraExchangeRate buildExchangeRate(JsonNode entry) {
-        BcraRate rate = buildRate(entry);
-        return new BcraExchangeRate(rate.date(), rate.value());
-    }
-
     private LocalDate extractDate(JsonNode entry) {
         JsonNode dateNode = entry.get("fecha");
         if (dateNode == null || dateNode.isNull()) {
