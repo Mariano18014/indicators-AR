@@ -34,6 +34,10 @@ public class BcraClient {
         return fetchByVariable(properties.getInterestRateVariable(), "interest rate");
     }
 
+    public BcraRate fetchReserves() {
+        return fetchByVariable(properties.getReservesVariable(), "reserves");
+    }
+
     private BcraRate fetchByVariable(String variable, String label) {
         String rawResponse = callBcraApi(variable, label);
         return parseResponse(rawResponse);
@@ -62,6 +66,10 @@ public class BcraClient {
     }
 
     BcraRate parseInterestRateResponse(String rawResponse) {
+        return parseResponse(rawResponse);
+    }
+
+    BcraRate parseReservesResponse(String rawResponse) {
         return parseResponse(rawResponse);
     }
 

@@ -11,6 +11,8 @@ public class BcraProperties {
 
     private String interestRateVariable = "6";
 
+    private String reservesVariable = "13";
+
     public String getBaseUrl() {
         return baseUrl;
     }
@@ -33,5 +35,13 @@ public class BcraProperties {
 
     public void setInterestRateVariable(String interestRateVariable) {
         this.interestRateVariable = interestRateVariable;
+    }
+
+    public String getReservesVariable() {
+        return reservesVariable;
+    }
+
+    public void setReservesVariable(String reservesVariable) {
+        this.reservesVariable = reservesVariable;
     }
 }

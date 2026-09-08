@@ -52,6 +52,7 @@ bcra:
     base-url: https://api.bcra.gob.ar
     exchange-rate-variable: "1"
     interest-rate-variable: "6"
+    reserves-variable: "13"
 
 logging:
   level:
