@@ -1,7 +1,7 @@
 spring:
   datasource:
-    # Overridden dynamically by Testcontainers in tests via @DynamicPropertySource
-    # Fallback for tests that don't use Testcontainers
+    # Overridden dynamically by PostgresContainerSupport via @DynamicPropertySource
+    # Fallback for unit tests that don't extend PostgresContainerSupport (no DB needed)
     url: jdbc:postgresql://localhost:5432/indicadoresar_test
     username: indicadoresar
     password: indicadoresar
