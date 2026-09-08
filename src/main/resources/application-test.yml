@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    # Overridden dynamically by Testcontainers in tests via @DynamicPropertySource
+    # Fallback for tests that don't use Testcontainers
+    url: jdbc:postgresql://localhost:5432/indicadoresar_test
+    username: indicadoresar
+    password: indicadoresar
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
