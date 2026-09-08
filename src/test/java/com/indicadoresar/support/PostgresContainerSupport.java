@@ -16,7 +16,8 @@ public abstract class PostgresContainerSupport {
         return new PostgreSQLContainer<>("postgres:16-alpine")
                 .withDatabaseName("indicadoresar_test")
                 .withUsername("test")
-                .withPassword("test");
+                .withPassword("test")
+                .withReuse(true);
     }
 
     @DynamicPropertySource
