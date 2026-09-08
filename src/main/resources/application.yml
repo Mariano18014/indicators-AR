@@ -47,6 +47,11 @@ management:
     health:
       show-details: when-authorized
 
+bcra:
+  api:
+    base-url: https://api.bcra.gob.ar
+    exchange-rate-variable: "1"
+
 logging:
   level:
     com.indicadoresar: INFO
