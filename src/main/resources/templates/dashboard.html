@@ -3,6 +3,7 @@
 <body>
 <div th:fragment="content">
     <h2>Panorama general</h2>
+    <p><a href="/indicators/compare">Comparar indicadores</a></p>
     <div class="cards">
         <div class="card" th:each="card : ${cards}">
             <h3><a th:href="@{/indicators/{code}(code=${card.code()})}" th:text="${card.name()}">Nombre</a></h3>

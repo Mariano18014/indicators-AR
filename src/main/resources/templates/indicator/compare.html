@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::content})}">
+<body>
+<div th:fragment="content">
+    <a href="/dashboard">← Volver al dashboard</a>
+    <h2>Comparar indicadores</h2>
+
+    <form method="get" action="/indicators/compare" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; margin-bottom: 1.5rem;">
+        <div>
+            <label>Indicador 1</label><br>
+            <select name="code1">
+                <option th:each="ind : ${indicators}" th:value="${ind.code}" th:text="${ind.name + ' (' + ind.code + ')'}"
+                        th:selected="${ind.code == code1}">Indicador</option>
+            </select>
+        </div>
+        <div>
+            <label>Indicador 2</label><br>
+            <select name="code2">
+                <option th:each="ind : ${indicators}" th:value="${ind.code}" th:text="${ind.name + ' (' + ind.code + ')'}"
+                        th:selected="${ind.code == code2}">Indicador</option>
+            </select>
+        </div>
+        <div>
+            <label>Desde</label><br>
+            <input type="date" name="from" th:value="${from}">
+        </div>
+        <div>
+            <label>Hasta</label><br>
+            <input type="date" name="to" th:value="${to}">
+        </div>
+        <div>
+            <button type="submit">Comparar</button>
+        </div>
+    </form>
+
+    <canvas id="compareChart" style="max-height: 400px;"></canvas>
+    <div id="noDataMessage" style="display:none; color: #999; text-align: center; margin-top: 1rem;">Sin datos para uno o ambos indicadores en este período</div>
+</div>
+
+<div th:fragment="scripts">
+<script th:inline="javascript">
+    const code1 = /*[[${code1}]]*/ 'DOLAR_OFICIAL';
+    const code2 = /*[[${code2}]]*/ 'IPC_NACIONAL';
+    const from = /*[[${from}]]*/ null;
+    const to = /*[[${to}]]*/ null;
+
+    function buildHistoryUrl(code, from, to) {
+        let url = '/api/indicators/' + code + '/history';
+        const params = new URLSearchParams();
+        if (from) params.append('from', from);
+        if (to) params.append('to', to);
+        const query = params.toString();
+        return query ? url + '?' + query : url;
+    }
+
+    async function fetchHistory(code, from, to) {
+        const url = buildHistoryUrl(code, from, to);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch ' + code);
+        return response.json();
+    }
+
+    function buildLabels(hist1, hist2) {
+        const dates = new Set();
+        hist1.forEach(item => dates.add(item.date));
+        hist2.forEach(item => dates.add(item.date));
+        return Array.from(dates).sort();
+    }
+
+    function mapByDate(history) {
+        const map = new Map();
+        history.forEach(item => map.set(item.date, item.value));
+        return map;
+    }
+
+    function buildDatasets(hist1, hist2, labels) {
+        const map1 = mapByDate(hist1);
+        const map2 = mapByDate(hist2);
+        const data1 = labels.map(date => map1.get(date) ?? null);
+        const data2 = labels.map(date => map2.get(date) ?? null);
+        return [
+            { label: code1, data: data1, borderColor: '#2c5282', backgroundColor: 'rgba(44, 82, 130, 0.1)', tension: 0.2, fill: false, yAxisID: 'y' },
+            { label: code2, data: data2, borderColor: '#c53030', backgroundColor: 'rgba(197, 48, 48, 0.1)', tension: 0.2, fill: false, yAxisID: 'y1' }
+        ];
+    }
+
+    function renderCompareChart(hist1, hist2) {
+        const canvas = document.getElementById('compareChart');
+        const noData = document.getElementById('noDataMessage');
+        if (hist1.length === 0 && hist2.length === 0) {
+            canvas.style.display = 'none';
+            noData.style.display = 'block';
+            return;
+        }
+        if (hist1.length === 0) console.warn('Sin datos para ' + code1);
+        if (hist2.length === 0) console.warn('Sin datos para ' + code2);
+        const labels = buildLabels(hist1, hist2);
+        const datasets = buildDatasets(hist1, hist2, labels);
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    x: { display: true, title: { display: true, text: 'Fecha' } },
+                    y: { position: 'left', title: { display: true, text: code1 } },
+                    y1: { position: 'right', title: { display: true, text: code2 }, grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    }
+
+    (async function initCompareChart() {
+        try {
+            const [hist1, hist2] = await Promise.all([fetchHistory(code1, from, to), fetchHistory(code2, from, to)]);
+            renderCompareChart(hist1, hist2);
+        } catch (e) {
+            console.error('Error loading compare', e);
+        }
+    })();
+</script>
+</div>
+</body>
+</html>
