@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::content})}">
+<body>
+<div th:fragment="content">
+    <h2>Estado de jobs de ingesta</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: #1a3a5c; color: white;">
+                <th style="padding: 0.5rem; text-align: left;">Job</th>
+                <th style="padding: 0.5rem; text-align: left;">Estado</th>
+                <th style="padding: 0.5rem; text-align: left;">Última ejecución</th>
+                <th style="padding: 0.5rem; text-align: left;">Exit code</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="job : ${jobs}" style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 0.5rem;" th:text="${job.jobName()}">jobName</td>
+                <td style="padding: 0.5rem;">
+                    <span th:text="${job.lastStatus()}"
+                          th:style="${job.lastStatus() == 'COMPLETED'} ? 'background: #2f855a; color: white; padding: 0.2rem 0.5rem; border-radius: 4px;' : (${job.lastStatus() == 'FAILED'} ? 'background: #c53030; color: white; padding: 0.2rem 0.5rem; border-radius: 4px;' : 'background: #718096; color: white; padding: 0.2rem 0.5rem; border-radius: 4px;')">
+                        COMPLETED
+                    </span>
+                </td>
+                <td style="padding: 0.5rem;" th:text="${job.lastExecutionTime() != null ? #temporals.format(job.lastExecutionTime(), 'dd/MM/yyyy HH:mm') : '—'}">01/01/2026 12:00</td>
+                <td style="padding: 0.5rem;" th:text="${job.lastExitCode() != null ? job.lastExitCode() : '—'}">COMPLETED</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
