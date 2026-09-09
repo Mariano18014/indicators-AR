@@ -54,6 +54,12 @@ bcra:
     interest-rate-variable: "6"
     reserves-variable: "13"
 
+indec:
+  api:
+    base-url: https://apis.datos.gob.ar/series/api/series/
+    ipc-series-id: "148.3_INIVELNAL_DICI_M_26"
+    format: "json"
+
 logging:
   level:
     com.indicadoresar: INFO
