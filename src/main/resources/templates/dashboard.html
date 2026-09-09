@@ -5,7 +5,7 @@
     <h2>Panorama general</h2>
     <div class="cards">
         <div class="card" th:each="card : ${cards}">
-            <h3 th:text="${card.name()}">Nombre</h3>
+            <h3><a th:href="@{/indicators/{code}(code=${card.code()})}" th:text="${card.name()}">Nombre</a></h3>
             <div th:if="${card.hasData()}">
                 <div class="value">
                     <span th:text="${#numbers.formatDecimal(card.value(), 1, 2, 'POINT')}">0.00</span>

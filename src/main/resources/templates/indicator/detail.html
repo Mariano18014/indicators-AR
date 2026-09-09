@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::content})}">
+<body>
+<div th:fragment="content">
+    <a href="/dashboard">← Volver al dashboard</a>
+    <h2 th:text="${indicator.name}">Indicador</h2>
+    <p>
+        <span th:text="${indicator.code}">CODE</span> —
+        <span th:text="${indicator.unit}">unit</span> —
+        <span th:text="${indicator.source}">source</span> —
+        <span th:text="${indicator.frequency}">frequency</span>
+    </p>
+    <p th:if="${indicator.description != null}" th:text="${indicator.description}">Descripción</p>
+
+    <div th:if="${history.isEmpty()}">
+        <p>Sin datos históricos para este período</p>
+    </div>
+
+    <div th:if="${!history.isEmpty()}">
+        <canvas id="historyChart" style="max-height: 400px;"></canvas>
+    </div>
+</div>
+
+<div th:fragment="scripts">
+<script th:inline="javascript">
+    const code = /*[[${indicator.code}]]*/ 'DOLAR_OFICIAL';
+    const from = /*[[${from}]]*/ null;
+    const to = /*[[${to}]]*/ null;
+
+    function buildHistoryUrl(code, from, to) {
+        let url = '/api/indicators/' + code + '/history';
+        const params = new URLSearchParams();
+        if (from) params.append('from', from);
+        if (to) params.append('to', to);
+        const query = params.toString();
+        return query ? url + '?' + query : url;
+    }
+
+    async function fetchHistory(code, from, to) {
+        const url = buildHistoryUrl(code, from, to);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch history');
+        return response.json();
+    }
+
+    function buildChartData(history) {
+        const labels = history.map(item => item.date);
+        const values = history.map(item => item.value);
+        return { labels, values };
+    }
+
+    function renderChart(history) {
+        const canvas = document.getElementById('historyChart');
+        if (!canvas || history.length === 0) return;
+        const data = buildChartData(history);
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: code,
+                    data: data.values,
+                    borderColor: '#2c5282',
+                    backgroundColor: 'rgba(44, 82, 130, 0.1)',
+                    tension: 0.2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { display: true, title: { display: true, text: 'Fecha' } },
+                    y: { display: true, title: { display: true, text: 'Valor' } }
+                }
+            }
+        });
+    }
+
+    (async function initChart() {
+        try {
+            const history = await fetchHistory(code, from, to);
+            if (history.length === 0) return;
+            renderChart(history);
+        } catch (e) {
+            console.error('Error loading history', e);
+        }
+    })();
+</script>
+</div>
+</body>
+</html>
