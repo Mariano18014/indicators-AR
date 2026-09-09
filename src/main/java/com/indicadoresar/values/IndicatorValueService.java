@@ -1,9 +1,12 @@
 package com.indicadoresar.values;
 
+import com.indicadoresar.common.exception.ResourceNotFoundException;
 import com.indicadoresar.indicators.Indicator;
+import com.indicadoresar.indicators.IndicatorRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +20,12 @@ public class IndicatorValueService {
     private static final Logger log = LoggerFactory.getLogger(IndicatorValueService.class);
 
     private final IndicatorValueRepository indicatorValueRepository;
+    private final IndicatorRepository indicatorRepository;
 
-    public IndicatorValueService(IndicatorValueRepository indicatorValueRepository) {
+    public IndicatorValueService(
+            IndicatorValueRepository indicatorValueRepository, IndicatorRepository indicatorRepository) {
         this.indicatorValueRepository = indicatorValueRepository;
+        this.indicatorRepository = indicatorRepository;
     }
 
     @Transactional
@@ -119,5 +125,46 @@ public class IndicatorValueService {
             return updateExistingValue(existing.get(), value, yoyValue);
         }
         throw ex;
+    }
+
+    @Transactional(readOnly = true)
+    public List<IndicatorValueResponse> findHistory(String code, LocalDate from, LocalDate to) {
+        Indicator indicator = findIndicatorByCode(code);
+        validateDateRange(from, to);
+        List<IndicatorValue> values = findValuesByRange(indicator, from, to);
+        return buildResponses(values);
+    }
+
+    private Indicator findIndicatorByCode(String code) {
+        return indicatorRepository
+                .findByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Indicator not found: " + code));
+    }
+
+    private void validateDateRange(LocalDate from, LocalDate to) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new IllegalArgumentException("from must be before or equal to to");
+        }
+    }
+
+    private List<IndicatorValue> findValuesByRange(Indicator indicator, LocalDate from, LocalDate to) {
+        Long indicatorId = indicator.getId();
+        if (from != null && to != null) {
+            return indicatorValueRepository.findByIndicatorIdAndDateBetweenOrderByDateAsc(
+                    indicatorId, from, to);
+        }
+        if (from != null) {
+            return indicatorValueRepository.findByIndicatorIdAndDateGreaterThanEqualOrderByDateAsc(
+                    indicatorId, from);
+        }
+        if (to != null) {
+            return indicatorValueRepository.findByIndicatorIdAndDateLessThanEqualOrderByDateAsc(
+                    indicatorId, to);
+        }
+        return indicatorValueRepository.findByIndicatorIdOrderByDateAsc(indicatorId);
+    }
+
+    private List<IndicatorValueResponse> buildResponses(List<IndicatorValue> values) {
+        return values.stream().map(IndicatorValueResponse::fromEntity).toList();
     }
 }

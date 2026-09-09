@@ -22,7 +22,8 @@ class IndicatorValueServiceUnitTest {
         BigDecimal value = new BigDecimal("1300.0000");
 
         IndicatorValueRepository mockRepository = mock(IndicatorValueRepository.class);
-        IndicatorValueService serviceWithMock = new IndicatorValueService(mockRepository);
+        IndicatorValueService serviceWithMock =
+                new IndicatorValueService(mockRepository, mock(com.indicadoresar.indicators.IndicatorRepository.class));
 
         when(mockRepository.findByIndicatorIdAndDate(indicator.getId(), date))
                 .thenReturn(java.util.Optional.empty())
