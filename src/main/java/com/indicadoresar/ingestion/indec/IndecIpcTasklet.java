@@ -10,6 +10,7 @@ import org.springframework.batch.core.step.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,24 +22,35 @@ public class IndecIpcTasklet implements Tasklet {
     private final IndecClient indecClient;
     private final IndicatorRepository indicatorRepository;
     private final IndicatorValueService indicatorValueService;
+    private final RetryTemplate retryTemplate;
 
     public IndecIpcTasklet(
             IndecClient indecClient,
             IndicatorRepository indicatorRepository,
-            IndicatorValueService indicatorValueService) {
+            IndicatorValueService indicatorValueService,
+            RetryTemplate retryTemplate) {
         this.indecClient = indecClient;
         this.indicatorRepository = indicatorRepository;
         this.indicatorValueService = indicatorValueService;
+        this.retryTemplate = retryTemplate;
     }
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
         log.info("Starting INDEC IPC ingestion");
-        Indicator indicator = findIndicator();
-        IndecRate ipc = fetchIpc();
-        saveIndicatorValue(indicator, ipc);
-        log.info("Finished INDEC IPC ingestion for date {}", ipc.date());
-        return RepeatStatus.FINISHED;
+        return executeWithRetry();
+    }
+
+    private RepeatStatus executeWithRetry() {
+        return retryTemplate.execute(
+                context -> {
+                    log.info("Attempt {} for INDEC IPC ingestion", context.getRetryCount() + 1);
+                    Indicator indicator = findIndicator();
+                    IndecRate ipc = fetchIpc();
+                    saveIndicatorValue(indicator, ipc);
+                    log.info("Finished INDEC IPC ingestion for date {}", ipc.date());
+                    return RepeatStatus.FINISHED;
+                });
     }
 
     private Indicator findIndicator() {

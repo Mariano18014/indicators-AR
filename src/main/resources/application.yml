@@ -32,6 +32,14 @@ spring:
       initialize-schema: always
     job:
       enabled: false
+  retry:
+    max-attempts: 3
+    backoff:
+      initial-interval: 1000
+      multiplier: 2.0
+      max-interval: 5000
+  aop:
+    auto: true
 
   thymeleaf:
     cache: true

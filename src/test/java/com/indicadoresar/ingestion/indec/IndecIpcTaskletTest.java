@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.support.RetryTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class IndecIpcTaskletTest {
@@ -24,13 +27,24 @@ class IndecIpcTaskletTest {
     @Mock
     private IndicatorValueService indicatorValueService;
 
+    @Mock
+    private RetryTemplate retryTemplate;
+
     private IndecIpcTasklet tasklet;
 
     private Indicator indicator;
 
     @BeforeEach
-    void setUp() {
-        tasklet = new IndecIpcTasklet(indecClient, indicatorRepository, indicatorValueService);
+    void setUp() throws Exception {
+        org.mockito.Mockito.lenient()
+                .when(retryTemplate.execute(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(
+                        invocation -> {
+                            RetryCallback callback = invocation.getArgument(0);
+                            return callback.doWithRetry(
+                                    org.mockito.Mockito.mock(RetryContext.class));
+                        });
+        tasklet = new IndecIpcTasklet(indecClient, indicatorRepository, indicatorValueService, retryTemplate);
         indicator = createIndicator();
     }
 

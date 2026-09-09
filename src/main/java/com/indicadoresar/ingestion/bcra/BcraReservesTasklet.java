@@ -10,6 +10,7 @@ import org.springframework.batch.core.step.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,24 +22,35 @@ public class BcraReservesTasklet implements Tasklet {
     private final BcraClient bcraClient;
     private final IndicatorRepository indicatorRepository;
     private final IndicatorValueService indicatorValueService;
+    private final RetryTemplate retryTemplate;
 
     public BcraReservesTasklet(
             BcraClient bcraClient,
             IndicatorRepository indicatorRepository,
-            IndicatorValueService indicatorValueService) {
+            IndicatorValueService indicatorValueService,
+            RetryTemplate retryTemplate) {
         this.bcraClient = bcraClient;
         this.indicatorRepository = indicatorRepository;
         this.indicatorValueService = indicatorValueService;
+        this.retryTemplate = retryTemplate;
     }
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
         log.info("Starting BCRA reserves ingestion");
-        Indicator indicator = findIndicator();
-        BcraRate reserves = fetchReserves();
-        saveIndicatorValue(indicator, reserves);
-        log.info("Finished BCRA reserves ingestion for date {}", reserves.date());
-        return RepeatStatus.FINISHED;
+        return executeWithRetry();
+    }
+
+    private RepeatStatus executeWithRetry() {
+        return retryTemplate.execute(
+                context -> {
+                    log.info("Attempt {} for BCRA reserves ingestion", context.getRetryCount() + 1);
+                    Indicator indicator = findIndicator();
+                    BcraRate reserves = fetchReserves();
+                    saveIndicatorValue(indicator, reserves);
+                    log.info("Finished BCRA reserves ingestion for date {}", reserves.date());
+                    return RepeatStatus.FINISHED;
+                });
     }
 
     private Indicator findIndicator() {
