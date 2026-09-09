@@ -29,7 +29,17 @@ public class IndicatorValueController {
         return ResponseEntity.ok(history);
     }
 
+    @GetMapping("/{code}/latest")
+    public ResponseEntity<IndicatorValueResponse> getLatest(@PathVariable String code) {
+        IndicatorValueResponse latest = findLatest(code);
+        return ResponseEntity.ok(latest);
+    }
+
     private List<IndicatorValueResponse> findHistory(String code, LocalDate from, LocalDate to) {
         return indicatorValueService.findHistory(code, from, to);
+    }
+
+    private IndicatorValueResponse findLatest(String code) {
+        return indicatorValueService.findLatest(code);
     }
 }

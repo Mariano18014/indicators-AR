@@ -19,4 +19,6 @@ public interface IndicatorValueRepository extends JpaRepository<IndicatorValue, 
 
     List<IndicatorValue> findByIndicatorIdAndDateLessThanEqualOrderByDateAsc(
             Long indicatorId, LocalDate to);
+
+    Optional<IndicatorValue> findTopByIndicatorIdOrderByDateDesc(Long indicatorId);
 }

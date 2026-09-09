@@ -167,4 +167,22 @@ public class IndicatorValueService {
     private List<IndicatorValueResponse> buildResponses(List<IndicatorValue> values) {
         return values.stream().map(IndicatorValueResponse::fromEntity).toList();
     }
+
+    @Transactional(readOnly = true)
+    public IndicatorValueResponse findLatest(String code) {
+        Indicator indicator = findIndicatorByCode(code);
+        IndicatorValue latest = findLatestValueForIndicator(indicator);
+        return buildLatestResponse(latest);
+    }
+
+    private IndicatorValue findLatestValueForIndicator(Indicator indicator) {
+        return indicatorValueRepository
+                .findTopByIndicatorIdOrderByDateDesc(indicator.getId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("No values found for indicator: " + indicator.getCode()));
+    }
+
+    private IndicatorValueResponse buildLatestResponse(IndicatorValue value) {
+        return IndicatorValueResponse.fromEntity(value);
+    }
 }
