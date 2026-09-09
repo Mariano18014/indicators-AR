@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndicadoresAR</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+        header { background: #1a3a5c; color: white; padding: 1rem 2rem; }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        footer { text-align: center; padding: 1rem; color: #666; font-size: 0.9rem; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card h3 { margin: 0 0 0.5rem 0; color: #1a3a5c; }
+        .card .value { font-size: 1.8rem; font-weight: bold; color: #2c5282; }
+        .card .meta { color: #666; font-size: 0.85rem; margin-top: 0.5rem; }
+        .card .no-data { color: #999; font-style: italic; }
+    </style>
+    <!-- Chart.js for HU-11 -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
+</head>
+<body>
+<header>
+    <h1>IndicadoresAR</h1>
+</header>
+<main th:replace="${content}">
+</main>
+<footer>
+    <p>Indicadores económicos argentinos &mdash; BCRA & INDEC</p>
+</footer>
+</body>
+</html>
