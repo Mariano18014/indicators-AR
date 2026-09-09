@@ -52,6 +52,6 @@ public class IndecIpcTasklet implements Tasklet {
     }
 
     private void saveIndicatorValue(Indicator indicator, IndecRate ipc) {
-        indicatorValueService.saveOrUpdate(indicator, ipc.date(), ipc.value());
+        indicatorValueService.saveOrUpdate(indicator, ipc.date(), ipc.value(), ipc.yoyValue());
     }
 }

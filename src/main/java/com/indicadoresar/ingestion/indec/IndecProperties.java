@@ -9,6 +9,8 @@ public class IndecProperties {
 
     private String ipcSeriesId = "148.3_INIVELNAL_DICI_M_26";
 
+    private String ipcYoySuffix = ":percent_change_a_year_ago";
+
     private String format = "json";
 
     public String getBaseUrl() {
@@ -25,6 +27,14 @@ public class IndecProperties {
 
     public void setIpcSeriesId(String ipcSeriesId) {
         this.ipcSeriesId = ipcSeriesId;
+    }
+
+    public String getIpcYoySuffix() {
+        return ipcYoySuffix;
+    }
+
+    public void setIpcYoySuffix(String ipcYoySuffix) {
+        this.ipcYoySuffix = ipcYoySuffix;
     }
 
     public String getFormat() {

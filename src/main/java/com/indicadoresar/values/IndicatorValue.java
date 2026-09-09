@@ -38,12 +38,24 @@ public class IndicatorValue {
     @Column(name = "ingested_at", nullable = false)
     private Instant ingestedAt;
 
+    @Column(name = "yoy_value", precision = 18, scale = 4)
+    private BigDecimal yoyValue;
+
     protected IndicatorValue() {}
 
     public IndicatorValue(Indicator indicator, LocalDate date, BigDecimal value, Instant ingestedAt) {
         this.indicator = indicator;
         this.date = date;
         this.value = value;
+        this.ingestedAt = ingestedAt;
+    }
+
+    public IndicatorValue(
+            Indicator indicator, LocalDate date, BigDecimal value, BigDecimal yoyValue, Instant ingestedAt) {
+        this.indicator = indicator;
+        this.date = date;
+        this.value = value;
+        this.yoyValue = yoyValue;
         this.ingestedAt = ingestedAt;
     }
 
@@ -67,8 +79,18 @@ public class IndicatorValue {
         return ingestedAt;
     }
 
+    public BigDecimal getYoyValue() {
+        return yoyValue;
+    }
+
     public void updateValue(BigDecimal newValue, Instant newIngestedAt) {
         this.value = newValue;
+        this.ingestedAt = newIngestedAt;
+    }
+
+    public void updateValue(BigDecimal newValue, BigDecimal newYoyValue, Instant newIngestedAt) {
+        this.value = newValue;
+        this.yoyValue = newYoyValue;
         this.ingestedAt = newIngestedAt;
     }
 }

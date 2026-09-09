@@ -29,20 +29,46 @@ public class IndecClient {
     }
 
     public IndecRate fetchIpc() {
-        String rawResponse = callIndecApi();
-        return parseResponse(rawResponse);
+        return fetchIpcWithYoy();
+    }
+
+    private IndecRate fetchIpcWithYoy() {
+        String valuePath = buildPath(properties.getIpcSeriesId());
+        String yoyPath = buildPath(properties.getIpcSeriesId() + properties.getIpcYoySuffix());
+        String valueResponse = callIndecApi(valuePath, "IPC");
+        String yoyResponse = callIndecApiSafe(yoyPath, "IPC YoY");
+        IndecRate valueRate = parseResponse(valueResponse);
+        BigDecimal yoyValue = parseYoyResponse(yoyResponse);
+        return new IndecRate(valueRate.date(), valueRate.value(), yoyValue);
     }
 
     private String callIndecApi() {
-        String path = buildPath();
-        log.info("Fetching INDEC IPC from {}", path);
+        String path = buildPath(properties.getIpcSeriesId());
+        return callIndecApi(path, "IPC");
+    }
+
+    private String callIndecApi(String path, String label) {
+        log.info("Fetching INDEC {} from {}", label, path);
         String response = restClient.get().uri(path).retrieve().body(String.class);
         validateResponse(response);
         return response;
     }
 
+    private String callIndecApiSafe(String path, String label) {
+        try {
+            return callIndecApi(path, label);
+        } catch (Exception e) {
+            log.warn("Failed to fetch INDEC {} (yoy may be null): {}", label, e.getMessage());
+            return null;
+        }
+    }
+
     private String buildPath() {
-        return "?ids=" + properties.getIpcSeriesId() + "&format=" + properties.getFormat() + "&limit=1&sort=desc";
+        return buildPath(properties.getIpcSeriesId());
+    }
+
+    private String buildPath(String seriesId) {
+        return "?ids=" + seriesId + "&format=" + properties.getFormat() + "&limit=1&sort=desc";
     }
 
     private void validateResponse(String response) {
@@ -56,6 +82,21 @@ public class IndecClient {
         JsonNode dataArray = extractDataArray(root);
         JsonNode latestEntry = findLatestEntry(dataArray);
         return buildRate(latestEntry);
+    }
+
+    private BigDecimal parseYoyResponse(String yoyResponse) {
+        if (yoyResponse == null || yoyResponse.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode root = parseJson(yoyResponse);
+            JsonNode dataArray = extractDataArray(root);
+            JsonNode latestEntry = findLatestEntry(dataArray);
+            return extractValue(latestEntry);
+        } catch (Exception e) {
+            log.warn("Failed to parse INDEC YoY response, yoy will be null: {}", e.getMessage());
+            return null;
+        }
     }
 
     private JsonNode parseJson(String rawResponse) {

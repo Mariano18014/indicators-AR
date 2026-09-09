@@ -24,15 +24,26 @@ public class IndicatorValueService {
 
     @Transactional
     public IndicatorValue saveOrUpdate(Indicator indicator, LocalDate date, BigDecimal value) {
-        return executeSaveOrUpdate(indicator, date, value);
+        return saveOrUpdate(indicator, date, value, null);
+    }
+
+    @Transactional
+    public IndicatorValue saveOrUpdate(
+            Indicator indicator, LocalDate date, BigDecimal value, BigDecimal yoyValue) {
+        return executeSaveOrUpdate(indicator, date, value, yoyValue);
+    }
+
+    private IndicatorValue executeSaveOrUpdate(
+            Indicator indicator, LocalDate date, BigDecimal value, BigDecimal yoyValue) {
+        Optional<IndicatorValue> existing = findExistingValue(indicator, date);
+        if (existing.isPresent()) {
+            return updateExistingValue(existing.get(), value, yoyValue);
+        }
+        return createNewValueWithRaceHandling(indicator, date, value, yoyValue);
     }
 
     private IndicatorValue executeSaveOrUpdate(Indicator indicator, LocalDate date, BigDecimal value) {
-        Optional<IndicatorValue> existing = findExistingValue(indicator, date);
-        if (existing.isPresent()) {
-            return updateExistingValue(existing.get(), value);
-        }
-        return createNewValueWithRaceHandling(indicator, date, value);
+        return executeSaveOrUpdate(indicator, date, value, null);
     }
 
     private Optional<IndicatorValue> findExistingValue(Indicator indicator, LocalDate date) {
@@ -40,33 +51,64 @@ public class IndicatorValueService {
     }
 
     private IndicatorValue updateExistingValue(IndicatorValue existing, BigDecimal value) {
+        return updateExistingValue(existing, value, null);
+    }
+
+    private IndicatorValue updateExistingValue(
+            IndicatorValue existing, BigDecimal value, BigDecimal yoyValue) {
         log.info(
-                "Updating existing value for indicator {} date {} from {} to {}",
+                "Updating existing value for indicator {} date {} from {} to {} yoy {} to {}",
                 existing.getIndicator().getCode(),
                 existing.getDate(),
                 existing.getValue(),
-                value);
-        existing.updateValue(value, Instant.now());
+                value,
+                existing.getYoyValue(),
+                yoyValue);
+        existing.updateValue(value, yoyValue, Instant.now());
         return indicatorValueRepository.save(existing);
     }
 
     private IndicatorValue createNewValue(Indicator indicator, LocalDate date, BigDecimal value) {
-        log.info("Creating new value for indicator {} date {} value {}", indicator.getCode(), date, value);
-        IndicatorValue newValue = new IndicatorValue(indicator, date, value, Instant.now());
+        return createNewValue(indicator, date, value, null);
+    }
+
+    private IndicatorValue createNewValue(
+            Indicator indicator, LocalDate date, BigDecimal value, BigDecimal yoyValue) {
+        log.info(
+                "Creating new value for indicator {} date {} value {} yoy {}",
+                indicator.getCode(),
+                date,
+                value,
+                yoyValue);
+        IndicatorValue newValue = new IndicatorValue(indicator, date, value, yoyValue, Instant.now());
         return indicatorValueRepository.save(newValue);
     }
 
     private IndicatorValue createNewValueWithRaceHandling(
             Indicator indicator, LocalDate date, BigDecimal value) {
+        return createNewValueWithRaceHandling(indicator, date, value, null);
+    }
+
+    private IndicatorValue createNewValueWithRaceHandling(
+            Indicator indicator, LocalDate date, BigDecimal value, BigDecimal yoyValue) {
         try {
-            return createNewValue(indicator, date, value);
+            return createNewValue(indicator, date, value, yoyValue);
         } catch (DataIntegrityViolationException ex) {
-            return handleRaceCondition(indicator, date, value, ex);
+            return handleRaceCondition(indicator, date, value, yoyValue, ex);
         }
     }
 
     private IndicatorValue handleRaceCondition(
             Indicator indicator, LocalDate date, BigDecimal value, DataIntegrityViolationException ex) {
+        return handleRaceCondition(indicator, date, value, null, ex);
+    }
+
+    private IndicatorValue handleRaceCondition(
+            Indicator indicator,
+            LocalDate date,
+            BigDecimal value,
+            BigDecimal yoyValue,
+            DataIntegrityViolationException ex) {
         log.warn(
                 "Race condition detected for indicator {} date {}, retrying as update",
                 indicator.getCode(),
@@ -74,7 +116,7 @@ public class IndicatorValueService {
                 ex);
         Optional<IndicatorValue> existing = findExistingValue(indicator, date);
         if (existing.isPresent()) {
-            return updateExistingValue(existing.get(), value);
+            return updateExistingValue(existing.get(), value, yoyValue);
         }
         throw ex;
     }

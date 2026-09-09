@@ -36,26 +36,28 @@ class IndecIpcTaskletTest {
 
     @Test
     void createsNewValueWhenNoneExists() throws Exception {
-        IndecRate rate = new IndecRate(LocalDate.of(2026, 8, 1), new BigDecimal("180.50"));
+        IndecRate rate = new IndecRate(LocalDate.of(2026, 8, 1), new BigDecimal("180.50"), new BigDecimal("45.20"));
         org.mockito.Mockito.when(indicatorRepository.findByCode("IPC_NACIONAL")).thenReturn(Optional.of(indicator));
         org.mockito.Mockito.when(indecClient.fetchIpc()).thenReturn(rate);
 
         tasklet.execute(null, null);
 
-        org.mockito.Mockito.verify(indicatorValueService).saveOrUpdate(indicator, rate.date(), rate.value());
+        org.mockito.Mockito.verify(indicatorValueService)
+                .saveOrUpdate(indicator, rate.date(), rate.value(), rate.yoyValue());
     }
 
     @Test
     void updatesExistingValueWhenAlreadyExists() throws Exception {
         LocalDate date = LocalDate.of(2026, 8, 1);
-        IndecRate rate = new IndecRate(date, new BigDecimal("182.00"));
+        IndecRate rate = new IndecRate(date, new BigDecimal("182.00"), new BigDecimal("46.00"));
 
         org.mockito.Mockito.when(indicatorRepository.findByCode("IPC_NACIONAL")).thenReturn(Optional.of(indicator));
         org.mockito.Mockito.when(indecClient.fetchIpc()).thenReturn(rate);
 
         tasklet.execute(null, null);
 
-        org.mockito.Mockito.verify(indicatorValueService).saveOrUpdate(indicator, date, rate.value());
+        org.mockito.Mockito.verify(indicatorValueService)
+                .saveOrUpdate(indicator, date, rate.value(), rate.yoyValue());
     }
 
     private Indicator createIndicator() {
