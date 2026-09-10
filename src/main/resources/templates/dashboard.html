@@ -1,26 +1,27 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::content})}">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::content}, ~{})}">
 <body>
 <div th:fragment="content">
-    <h2>Panorama general</h2>
-    <p><a href="/indicators/compare">Comparar indicadores</a></p>
+    <div class="page-header">
+        <h2>Panorama general</h2>
+    </div>
     <div class="cards">
         <div class="card" th:each="card : ${cards}">
-            <h3><a th:href="@{/indicators/{code}(code=${card.code()})}" th:text="${card.name()}">Nombre</a></h3>
+            <h3 class="card-title"><a th:href="@{/indicators/{code}(code=${card.code()})}" th:text="${card.name()}">Nombre</a></h3>
             <div th:if="${card.hasData()}">
-                <div class="value">
-                    <span th:text="${#numbers.formatDecimal(card.value(), 1, 2, 'POINT')}">0.00</span>
-                    <span th:text="${card.unit()}">ARS</span>
+                <div>
+                    <span class="card-value" th:text="${#numbers.formatDecimal(card.value(), 1, 2, 'POINT')}">0.00</span>
+                    <span class="card-unit" th:text="${card.unit()}">ARS</span>
                 </div>
-                <div class="meta">
+                <div class="card-meta">
                     <span th:text="${#temporals.format(card.date(), 'dd/MM/yyyy')}">01/01/2026</span>
                     <span th:if="${card.yoyValue() != null}">
                         &mdash; Var. interanual: <span th:text="${#numbers.formatDecimal(card.yoyValue(), 1, 2, 'POINT')}">0.00</span>%
                     </span>
                 </div>
-                <div class="meta" th:text="${card.frequency()}">DIARIA</div>
+                <div class="card-meta" th:text="${card.frequency()}">DIARIA</div>
             </div>
-            <div th:if="${!card.hasData()}" class="no-data">Sin datos</div>
+            <div th:if="${!card.hasData()}" class="card-empty">Sin datos</div>
         </div>
     </div>
 </div>

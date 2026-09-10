@@ -1,31 +1,36 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::content})}">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::content}, ~{::scripts})}">
 <body>
 <div th:fragment="content">
-    <a href="/dashboard">← Volver al dashboard</a>
-    <h2 th:text="${indicator.name}">Indicador</h2>
-    <p>
-        <span th:text="${indicator.code}">CODE</span> —
-        <span th:text="${indicator.unit}">unit</span> —
-        <span th:text="${indicator.source}">source</span> —
-        <span th:text="${indicator.frequency}">frequency</span>
-    </p>
-    <p th:if="${indicator.description != null}" th:text="${indicator.description}">Descripción</p>
-
-    <div th:if="${history.isEmpty()}">
-        <p>Sin datos históricos para este período</p>
+    <a class="back-link" href="/dashboard">&larr; Volver al dashboard</a>
+    <div class="page-header">
+        <h2 th:text="${indicator.name}">Indicador</h2>
+        <div class="card-meta">
+            <span th:text="${indicator.code}">CODE</span> &mdash;
+            <span th:text="${indicator.unit}">unit</span> &mdash;
+            <span th:text="${indicator.source}">source</span> &mdash;
+            <span th:text="${indicator.frequency}">frequency</span>
+        </div>
+        <p th:if="${indicator.description != null}" th:text="${indicator.description}">Descripción</p>
     </div>
 
-    <div th:if="${!history.isEmpty()}">
-        <canvas id="historyChart" style="max-height: 400px;"></canvas>
+    <div th:if="${history.isEmpty()}" class="chart-container empty-state">
+        Sin datos históricos para este período
+    </div>
+
+    <div th:if="${!history.isEmpty()}" class="chart-container">
+        <canvas id="historyChart"></canvas>
+        <p id="sparseDataNotice" class="card-meta" hidden>
+            Todavía hay un solo valor histórico para este indicador. La línea de tendencia va a aparecer a medida que se acumulen más datos.
+        </p>
     </div>
 </div>
 
 <div th:fragment="scripts">
 <script th:inline="javascript">
     const code = /*[[${indicator.code}]]*/ 'DOLAR_OFICIAL';
-    const from = /*[[${from}]]*/ null;
-    const to = /*[[${to}]]*/ null;
+    const from = /*[[${from != null ? from.toString() : null}]]*/ null;
+    const to = /*[[${to != null ? to.toString() : null}]]*/ null;
 
     function buildHistoryUrl(code, from, to) {
         let url = '/api/indicators/' + code + '/history';
@@ -58,23 +63,25 @@
             type: 'line',
             data: {
                 labels: data.labels,
-                datasets: [{
-                    label: code,
-                    data: data.values,
-                    borderColor: '#2c5282',
-                    backgroundColor: 'rgba(44, 82, 130, 0.1)',
-                    tension: 0.2,
-                    fill: true
-                }]
+                datasets: [buildLineDataset(code, data.values, 0)],
             },
             options: {
                 responsive: true,
+                plugins: {
+                    legend: { display: false },
+                },
                 scales: {
-                    x: { display: true, title: { display: true, text: 'Fecha' } },
-                    y: { display: true, title: { display: true, text: 'Valor' } }
-                }
-            }
+                    x: buildAxisOptions('Fecha'),
+                    y: buildAxisOptions('Valor'),
+                },
+            },
         });
+    }
+
+    function showSparseDataNoticeIfNeeded(history) {
+        const notice = document.getElementById('sparseDataNotice');
+        if (!notice) return;
+        notice.hidden = history.length >= 2;
     }
 
     (async function initChart() {
@@ -82,6 +89,7 @@
             const history = await fetchHistory(code, from, to);
             if (history.length === 0) return;
             renderChart(history);
+            showSparseDataNoticeIfNeeded(history);
         } catch (e) {
             console.error('Error loading history', e);
         }
