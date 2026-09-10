@@ -13,11 +13,12 @@ public abstract class PostgresContainerSupport {
     static final PostgreSQLContainer<?> postgres = createContainer();
 
     private static PostgreSQLContainer<?> createContainer() {
-        return new PostgreSQLContainer<>("postgres:16-alpine")
-                .withDatabaseName("indicadoresar_test")
-                .withUsername("test")
-                .withPassword("test")
-                .withReuse(true);
+        PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:16-alpine");
+        container.withDatabaseName("indicadoresar_test");
+        container.withUsername("test");
+        container.withPassword("test");
+        container.withReuse(true);
+        return container;
     }
 
     @DynamicPropertySource

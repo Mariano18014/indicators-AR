@@ -1,6 +1,5 @@
 package com.indicadoresar.ingestion.bcra;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.indicadoresar.indicators.Indicator;
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.support.RetryTemplate;
@@ -43,7 +43,7 @@ class BcraReservesTaskletTest {
                 .when(retryTemplate.execute(org.mockito.ArgumentMatchers.any()))
                 .thenAnswer(
                         invocation -> {
-                            RetryCallback callback = invocation.getArgument(0);
+                            RetryCallback<RepeatStatus, Exception> callback = invocation.getArgument(0);
                             return callback.doWithRetry(
                                     org.mockito.Mockito.mock(RetryContext.class));
                         });

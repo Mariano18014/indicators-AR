@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/indicators")
+@RequestMapping("/api/indicators/{code}")
 public class IndicatorValueController {
 
     private final IndicatorValueService indicatorValueService;
@@ -20,7 +20,7 @@ public class IndicatorValueController {
         this.indicatorValueService = indicatorValueService;
     }
 
-    @GetMapping("/{code}/history")
+    @GetMapping("/history")
     public ResponseEntity<List<IndicatorValueResponse>> getHistory(
             @PathVariable String code,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -29,7 +29,7 @@ public class IndicatorValueController {
         return ResponseEntity.ok(history);
     }
 
-    @GetMapping("/{code}/latest")
+    @GetMapping("/latest")
     public ResponseEntity<IndicatorValueResponse> getLatest(@PathVariable String code) {
         IndicatorValueResponse latest = findLatest(code);
         return ResponseEntity.ok(latest);

@@ -1,7 +1,6 @@
 package com.indicadoresar.common.config;
 
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
@@ -14,17 +13,11 @@ import org.springframework.web.client.ResourceAccessException;
 @Configuration
 public class RetryConfig {
 
-    @Value("${batch.retry.max-attempts:3}")
-    private int maxAttempts;
+    private final RetryProperties properties;
 
-    @Value("${batch.retry.backoff.initial-interval:1000}")
-    private long initialInterval;
-
-    @Value("${batch.retry.backoff.multiplier:2.0}")
-    private double multiplier;
-
-    @Value("${batch.retry.backoff.max-interval:5000}")
-    private long maxInterval;
+    public RetryConfig(RetryProperties properties) {
+        this.properties = properties;
+    }
 
     @Bean
     public RetryTemplate retryTemplate() {
@@ -45,14 +38,14 @@ public class RetryConfig {
                         HttpServerErrorException.class, true,
                         HttpClientErrorException.class, true,
                         ResourceAccessException.class, true);
-        return new SimpleRetryPolicy(maxAttempts, retryableExceptions, true);
+        return new SimpleRetryPolicy(properties.getMaxAttempts(), retryableExceptions, true);
     }
 
     private ExponentialBackOffPolicy buildBackOffPolicy() {
         ExponentialBackOffPolicy policy = new ExponentialBackOffPolicy();
-        policy.setInitialInterval(initialInterval);
-        policy.setMultiplier(multiplier);
-        policy.setMaxInterval(maxInterval);
+        policy.setInitialInterval(properties.getBackoff().getInitialInterval());
+        policy.setMultiplier(properties.getBackoff().getMultiplier());
+        policy.setMaxInterval(properties.getBackoff().getMaxInterval());
         return policy;
     }
 }

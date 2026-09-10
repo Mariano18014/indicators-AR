@@ -8,6 +8,7 @@ import com.indicadoresar.values.IndicatorValueRepository;
 import com.indicadoresar.values.IndicatorValueService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +60,7 @@ class DashboardControllerTest extends PostgresContainerSupport {
         dashboardController.showDashboard(model);
 
         assertThat(model.containsAttribute("cards")).isTrue();
-        var cards = (java.util.List<DashboardCard>) model.getAttribute("cards");
+        var cards = findCardsFromModel(model);
         assertThat(cards).hasSize(4);
     }
 
@@ -70,7 +71,7 @@ class DashboardControllerTest extends PostgresContainerSupport {
 
         dashboardController.showDashboard(model);
 
-        var cards = (java.util.List<DashboardCard>) model.getAttribute("cards");
+        var cards = findCardsFromModel(model);
         assertThat(cards.get(0).code()).isEqualTo("DOLAR_OFICIAL");
         assertThat(cards.get(1).code()).isEqualTo("IPC_NACIONAL");
     }
@@ -82,7 +83,7 @@ class DashboardControllerTest extends PostgresContainerSupport {
 
         dashboardController.showDashboard(model);
 
-        var cards = (java.util.List<DashboardCard>) model.getAttribute("cards");
+        var cards = findCardsFromModel(model);
         assertThat(cards).allSatisfy(card -> assertThat(card.hasData()).isTrue());
     }
 
@@ -92,7 +93,7 @@ class DashboardControllerTest extends PostgresContainerSupport {
 
         dashboardController.showDashboard(model);
 
-        var cards = (java.util.List<DashboardCard>) model.getAttribute("cards");
+        var cards = findCardsFromModel(model);
         assertThat(cards).allSatisfy(card -> assertThat(card.hasData()).isFalse());
         assertThat(cards).allSatisfy(card -> assertThat(card.value()).isNull());
     }
@@ -105,6 +106,11 @@ class DashboardControllerTest extends PostgresContainerSupport {
 
         assertThat(cards).hasSize(4);
         assertThat(cards.get(0).code()).isEqualTo("DOLAR_OFICIAL");
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<DashboardCard> findCardsFromModel(Model model) {
+        return (List<DashboardCard>) model.getAttribute("cards");
     }
 
     private void seedOneValuePerIndicator() {

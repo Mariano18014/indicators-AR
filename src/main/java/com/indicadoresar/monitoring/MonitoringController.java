@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/monitoring")
+@RequestMapping("/api/monitoring/jobs")
 public class MonitoringController {
 
     private final MonitoringService monitoringService;
@@ -18,13 +18,13 @@ public class MonitoringController {
         this.monitoringService = monitoringService;
     }
 
-    @GetMapping("/jobs")
+    @GetMapping
     public ResponseEntity<List<JobStatusResponse>> getJobsStatus() {
         List<JobStatusResponse> statuses = findAllJobsStatus();
         return ResponseEntity.ok(statuses);
     }
 
-    @PostMapping("/jobs/{jobName}/run")
+    @PostMapping("/{jobName}/run")
     public ResponseEntity<JobTriggerResponse> triggerJob(@PathVariable String jobName) {
         JobTriggerResponse response = triggerJobByName(jobName);
         return ResponseEntity.ok(response);

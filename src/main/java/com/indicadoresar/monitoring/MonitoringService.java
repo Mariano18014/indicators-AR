@@ -10,8 +10,8 @@ import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.repository.explore.JobExplorer;
+import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
@@ -24,14 +24,14 @@ public class MonitoringService {
             BcraReservesJobConfig.JOB_NAME,
             IndecIpcJobConfig.JOB_NAME);
 
-    private final JobExplorer jobExplorer;
-    private final JobLauncher jobLauncher;
+    private final JobRepository jobRepository;
+    private final JobOperator jobOperator;
     private final ApplicationContext applicationContext;
 
     public MonitoringService(
-            JobExplorer jobExplorer, JobLauncher jobLauncher, ApplicationContext applicationContext) {
-        this.jobExplorer = jobExplorer;
-        this.jobLauncher = jobLauncher;
+            JobRepository jobRepository, JobOperator jobOperator, ApplicationContext applicationContext) {
+        this.jobRepository = jobRepository;
+        this.jobOperator = jobOperator;
         this.applicationContext = applicationContext;
     }
 
@@ -52,11 +52,11 @@ public class MonitoringService {
     }
 
     private JobExecution findLastExecution(String jobName) {
-        var instances = jobExplorer.getJobInstances(jobName, 0, 1);
+        var instances = jobRepository.getJobInstances(jobName, 0, 1);
         if (instances.isEmpty()) {
             return null;
         }
-        var executions = jobExplorer.getJobExecutions(instances.get(0));
+        var executions = jobRepository.getJobExecutions(instances.get(0));
         if (executions.isEmpty()) {
             return null;
         }
@@ -87,7 +87,7 @@ public class MonitoringService {
 
     private JobExecution launchJob(Job job, JobParameters params) {
         try {
-            return jobLauncher.run(job, params);
+            return jobOperator.start(job, params);
         } catch (Exception e) {
             String msg = e.getMessage() != null ? e.getMessage() : "";
             if (msg.contains("already running") || e.getClass().getSimpleName().contains("AlreadyRunning")) {

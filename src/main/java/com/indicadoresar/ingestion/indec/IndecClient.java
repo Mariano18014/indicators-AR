@@ -42,11 +42,6 @@ public class IndecClient {
         return new IndecRate(valueRate.date(), valueRate.value(), yoyValue);
     }
 
-    private String callIndecApi() {
-        String path = buildPath(properties.getIpcSeriesId());
-        return callIndecApi(path, "IPC");
-    }
-
     private String callIndecApi(String path, String label) {
         log.info("Fetching INDEC {} from {}", label, path);
         String response = restClient.get().uri(path).retrieve().body(String.class);
@@ -61,10 +56,6 @@ public class IndecClient {
             log.warn("Failed to fetch INDEC {} (yoy may be null): {}", label, e.getMessage());
             return null;
         }
-    }
-
-    private String buildPath() {
-        return buildPath(properties.getIpcSeriesId());
     }
 
     private String buildPath(String seriesId) {

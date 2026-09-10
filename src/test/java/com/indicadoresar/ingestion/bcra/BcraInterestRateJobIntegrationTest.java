@@ -13,7 +13,7 @@ import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
-import org.springframework.batch.test.JobLauncherTestUtils;
+import org.springframework.batch.test.JobOperatorTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,7 +31,7 @@ import org.mockito.Mockito;
 class BcraInterestRateJobIntegrationTest extends PostgresContainerSupport {
 
     @Autowired
-    private JobLauncherTestUtils jobLauncherTestUtils;
+    private JobOperatorTestUtils jobOperatorTestUtils;
 
     @Autowired
     @Qualifier("bcraInterestRateJob")
@@ -60,7 +60,7 @@ class BcraInterestRateJobIntegrationTest extends PostgresContainerSupport {
 
         Mockito.when(bcraClient.fetchInterestRate()).thenReturn(firstRate).thenReturn(secondRate);
 
-        jobLauncherTestUtils.setJob(bcraInterestRateJob);
+        jobOperatorTestUtils.setJob(bcraInterestRateJob);
 
         JobExecution firstExecution = runJobWithUniqueParams(1);
         assertThat(firstExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
@@ -77,7 +77,7 @@ class BcraInterestRateJobIntegrationTest extends PostgresContainerSupport {
         JobParameters params = new JobParametersBuilder()
                 .addLong("run.id", runId)
                 .toJobParameters();
-        return jobLauncherTestUtils.launchJob(params);
+        return jobOperatorTestUtils.startJob(params);
     }
 
     private BigDecimal findValueForDate(LocalDate date) {

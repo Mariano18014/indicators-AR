@@ -19,8 +19,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        jdbc.lob.non_contextual_creation: true
+        "[format_sql]": true
+        "[jdbc.lob.non_contextual_creation]": true
 
   flyway:
     enabled: true
@@ -30,12 +30,6 @@ spring:
   batch:
     job:
       enabled: false
-  retry:
-    max-attempts: 3
-    backoff:
-      initial-interval: 1000
-      multiplier: 2.0
-      max-interval: 5000
   aop:
     auto: true
 
@@ -53,6 +47,14 @@ management:
     health:
       show-details: when-authorized
 
+batch:
+  retry:
+    max-attempts: 3
+    backoff:
+      initial-interval: 1000
+      multiplier: 2.0
+      max-interval: 5000
+
 bcra:
   api:
     base-url: https://api.bcra.gob.ar
@@ -67,5 +69,5 @@ indec:
 
 logging:
   level:
-    com.indicadoresar: INFO
-    org.springframework.batch: INFO
+    "[com.indicadoresar]": INFO
+    "[org.springframework.batch]": INFO

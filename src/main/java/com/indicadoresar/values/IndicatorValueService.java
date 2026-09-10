@@ -48,16 +48,8 @@ public class IndicatorValueService {
         return createNewValueWithRaceHandling(indicator, date, value, yoyValue);
     }
 
-    private IndicatorValue executeSaveOrUpdate(Indicator indicator, LocalDate date, BigDecimal value) {
-        return executeSaveOrUpdate(indicator, date, value, null);
-    }
-
     private Optional<IndicatorValue> findExistingValue(Indicator indicator, LocalDate date) {
         return indicatorValueRepository.findByIndicatorIdAndDate(indicator.getId(), date);
-    }
-
-    private IndicatorValue updateExistingValue(IndicatorValue existing, BigDecimal value) {
-        return updateExistingValue(existing, value, null);
     }
 
     private IndicatorValue updateExistingValue(
@@ -74,10 +66,6 @@ public class IndicatorValueService {
         return indicatorValueRepository.save(existing);
     }
 
-    private IndicatorValue createNewValue(Indicator indicator, LocalDate date, BigDecimal value) {
-        return createNewValue(indicator, date, value, null);
-    }
-
     private IndicatorValue createNewValue(
             Indicator indicator, LocalDate date, BigDecimal value, BigDecimal yoyValue) {
         log.info(
@@ -91,22 +79,12 @@ public class IndicatorValueService {
     }
 
     private IndicatorValue createNewValueWithRaceHandling(
-            Indicator indicator, LocalDate date, BigDecimal value) {
-        return createNewValueWithRaceHandling(indicator, date, value, null);
-    }
-
-    private IndicatorValue createNewValueWithRaceHandling(
             Indicator indicator, LocalDate date, BigDecimal value, BigDecimal yoyValue) {
         try {
             return createNewValue(indicator, date, value, yoyValue);
         } catch (DataIntegrityViolationException ex) {
             return handleRaceCondition(indicator, date, value, yoyValue, ex);
         }
-    }
-
-    private IndicatorValue handleRaceCondition(
-            Indicator indicator, LocalDate date, BigDecimal value, DataIntegrityViolationException ex) {
-        return handleRaceCondition(indicator, date, value, null, ex);
     }
 
     private IndicatorValue handleRaceCondition(

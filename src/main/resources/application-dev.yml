@@ -8,5 +8,5 @@ spring:
 
 logging:
   level:
-    com.indicadoresar: DEBUG
-    org.hibernate.SQL: DEBUG
+    "[com.indicadoresar]": DEBUG
+    "[org.hibernate.SQL]": DEBUG

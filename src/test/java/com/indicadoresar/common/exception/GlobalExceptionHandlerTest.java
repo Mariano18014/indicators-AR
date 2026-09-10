@@ -3,10 +3,8 @@ package com.indicadoresar.common.exception;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.validation.ConstraintViolationException;
-import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -14,7 +12,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 class GlobalExceptionHandlerTest {
 

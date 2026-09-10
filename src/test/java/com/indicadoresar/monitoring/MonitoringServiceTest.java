@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
-import org.springframework.batch.test.JobLauncherTestUtils;
+import org.springframework.batch.test.JobOperatorTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,7 +35,7 @@ class MonitoringServiceTest extends PostgresContainerSupport {
     private MonitoringService monitoringService;
 
     @Autowired
-    private JobLauncherTestUtils jobLauncherTestUtils;
+    private JobOperatorTestUtils jobOperatorTestUtils;
 
     @Autowired
     @Qualifier("bcraExchangeRateJob")
@@ -67,8 +67,8 @@ class MonitoringServiceTest extends PostgresContainerSupport {
         BcraRate rate = new BcraRate(LocalDate.of(2026, 9, 7), new BigDecimal("1210.75"));
         Mockito.when(bcraClient.fetchExchangeRate()).thenReturn(rate);
 
-        jobLauncherTestUtils.setJob(bcraExchangeRateJob);
-        var execution = jobLauncherTestUtils.launchJob(new JobParametersBuilder().addLong("run.id", 1L).toJobParameters());
+        jobOperatorTestUtils.setJob(bcraExchangeRateJob);
+        var execution = jobOperatorTestUtils.startJob(new JobParametersBuilder().addLong("run.id", 1L).toJobParameters());
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
 
         var statuses = monitoringService.findAllJobsStatus();
@@ -83,8 +83,8 @@ class MonitoringServiceTest extends PostgresContainerSupport {
     void findAllJobsStatusReturnsFailedAfterFailure() throws Exception {
         Mockito.when(bcraClient.fetchExchangeRate()).thenThrow(new IllegalStateException("BCRA down"));
 
-        jobLauncherTestUtils.setJob(bcraExchangeRateJob);
-        var execution = jobLauncherTestUtils.launchJob(new JobParametersBuilder().addLong("run.id", 2L).toJobParameters());
+        jobOperatorTestUtils.setJob(bcraExchangeRateJob);
+        var execution = jobOperatorTestUtils.startJob(new JobParametersBuilder().addLong("run.id", 2L).toJobParameters());
         assertThat(execution.getStatus()).isEqualTo(BatchStatus.FAILED);
 
         var statuses = monitoringService.findAllJobsStatus();
