@@ -28,8 +28,6 @@ spring:
     baseline-on-migrate: true
 
   batch:
-    jdbc:
-      initialize-schema: always
     job:
       enabled: false
   retry:
@@ -58,9 +56,8 @@ management:
 bcra:
   api:
     base-url: https://api.bcra.gob.ar
-    exchange-rate-variable: "1"
-    interest-rate-variable: "6"
-    reserves-variable: "13"
+    interest-rate-variable: "7"
+    reserves-variable: "1"
 
 indec:
   api:

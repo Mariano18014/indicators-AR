@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
@@ -42,6 +43,7 @@ public class RetryConfig {
                 Map.of(
                         IllegalStateException.class, true,
                         HttpServerErrorException.class, true,
+                        HttpClientErrorException.class, true,
                         ResourceAccessException.class, true);
         return new SimpleRetryPolicy(maxAttempts, retryableExceptions, true);
     }

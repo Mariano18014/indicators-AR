@@ -7,11 +7,9 @@ public class BcraProperties {
 
     private String baseUrl = "https://api.bcra.gob.ar";
 
-    private String exchangeRateVariable = "1";
+    private String interestRateVariable = "7";
 
-    private String interestRateVariable = "6";
-
-    private String reservesVariable = "13";
+    private String reservesVariable = "1";
 
     public String getBaseUrl() {
         return baseUrl;
@@ -19,14 +17,6 @@ public class BcraProperties {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
-    }
-
-    public String getExchangeRateVariable() {
-        return exchangeRateVariable;
-    }
-
-    public void setExchangeRateVariable(String exchangeRateVariable) {
-        this.exchangeRateVariable = exchangeRateVariable;
     }
 
     public String getInterestRateVariable() {

@@ -12,7 +12,5 @@ spring:
   flyway:
     enabled: true
   batch:
-    jdbc:
-      initialize-schema: always
     job:
       enabled: false

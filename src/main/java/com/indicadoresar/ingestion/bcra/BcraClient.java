@@ -15,6 +15,8 @@ public class BcraClient {
 
     private static final Logger log = LoggerFactory.getLogger(BcraClient.class);
     private static final DateTimeFormatter BCRA_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final String CAMBIARIAS_COTIZACIONES_PATH = "/estadisticascambiarias/v1.0/Cotizaciones";
+    private static final String USD_CURRENCY_CODE = "USD";
 
     private final RestClient restClient;
     private final BcraProperties properties;
@@ -27,32 +29,32 @@ public class BcraClient {
     }
 
     public BcraRate fetchExchangeRate() {
-        return fetchByVariable(properties.getExchangeRateVariable(), "exchange rate");
+        String rawResponse = callBcraApi(CAMBIARIAS_COTIZACIONES_PATH, "exchange rate");
+        return parseExchangeRateResponse(rawResponse);
     }
 
     public BcraRate fetchInterestRate() {
-        return fetchByVariable(properties.getInterestRateVariable(), "interest rate");
+        return fetchMonetariaVariable(properties.getInterestRateVariable(), "interest rate");
     }
 
     public BcraRate fetchReserves() {
-        return fetchByVariable(properties.getReservesVariable(), "reserves");
+        return fetchMonetariaVariable(properties.getReservesVariable(), "reserves");
     }
 
-    private BcraRate fetchByVariable(String variable, String label) {
-        String rawResponse = callBcraApi(variable, label);
-        return parseResponse(rawResponse);
+    private BcraRate fetchMonetariaVariable(String variable, String label) {
+        String rawResponse = callBcraApi(buildMonetariasPath(variable), label);
+        return parseMonetariaResponse(rawResponse);
     }
 
-    private String callBcraApi(String variable, String label) {
-        String path = buildPath(variable);
+    private String buildMonetariasPath(String variable) {
+        return "/estadisticas/v4.0/monetarias/" + variable;
+    }
+
+    private String callBcraApi(String path, String label) {
         log.info("Fetching BCRA {} from {}", label, path);
         String response = restClient.get().uri(path).retrieve().body(String.class);
         validateResponse(response);
         return response;
-    }
-
-    private String buildPath(String variable) {
-        return "/estadisticas/v3.0/monetarias/" + variable;
     }
 
     private void validateResponse(String response) {
@@ -62,22 +64,81 @@ public class BcraClient {
     }
 
     BcraRate parseExchangeRateResponse(String rawResponse) {
-        return parseResponse(rawResponse);
+        JsonNode results = extractCambiariasResults(parseJson(rawResponse));
+        LocalDate date = extractCambiariasDate(results);
+        JsonNode usdEntry = findUsdEntry(extractCambiariasDetalle(results));
+        BigDecimal value = extractCambiariasValue(usdEntry);
+        return new BcraRate(date, value);
     }
 
-    BcraRate parseInterestRateResponse(String rawResponse) {
-        return parseResponse(rawResponse);
+    private JsonNode extractCambiariasResults(JsonNode root) {
+        JsonNode results = root.get("results");
+        if (results == null || !results.isObject()) {
+            throw new IllegalStateException("BCRA cambiarias response missing 'results' object");
+        }
+        return results;
     }
 
-    BcraRate parseReservesResponse(String rawResponse) {
-        return parseResponse(rawResponse);
+    private LocalDate extractCambiariasDate(JsonNode results) {
+        JsonNode dateNode = results.get("fecha");
+        if (dateNode == null || dateNode.isNull()) {
+            throw new IllegalStateException("BCRA cambiarias response missing 'fecha'");
+        }
+        return parseDate(dateNode.asText());
     }
 
-    BcraRate parseResponse(String rawResponse) {
-        JsonNode root = parseJson(rawResponse);
-        JsonNode results = extractResultsArray(root);
-        JsonNode latestEntry = findLatestEntry(results);
-        return buildRate(latestEntry);
+    private JsonNode extractCambiariasDetalle(JsonNode results) {
+        JsonNode detalle = results.get("detalle");
+        if (detalle == null || !detalle.isArray() || detalle.isEmpty()) {
+            throw new IllegalStateException("BCRA cambiarias response missing 'detalle' array");
+        }
+        return detalle;
+    }
+
+    private JsonNode findUsdEntry(JsonNode detalle) {
+        for (JsonNode entry : detalle) {
+            JsonNode code = entry.get("codigoMoneda");
+            if (code != null && USD_CURRENCY_CODE.equals(code.asText())) {
+                return entry;
+            }
+        }
+        throw new IllegalStateException("BCRA cambiarias response missing USD entry");
+    }
+
+    private BigDecimal extractCambiariasValue(JsonNode entry) {
+        JsonNode valueNode = entry.get("tipoCotizacion");
+        if (valueNode == null || valueNode.isNull()) {
+            throw new IllegalStateException("BCRA cambiarias entry missing 'tipoCotizacion': " + entry);
+        }
+        return parseValue(valueNode.asText());
+    }
+
+    BcraRate parseMonetariaResponse(String rawResponse) {
+        JsonNode latestEntry = extractLatestMonetariaEntry(parseJson(rawResponse));
+        LocalDate date = parseDate(extractMonetariaField(latestEntry, "fecha").asText());
+        BigDecimal value = parseValue(extractMonetariaField(latestEntry, "valor").asText());
+        return new BcraRate(date, value);
+    }
+
+    private JsonNode extractLatestMonetariaEntry(JsonNode root) {
+        JsonNode results = root.get("results");
+        if (results == null || !results.isArray() || results.isEmpty()) {
+            throw new IllegalStateException("BCRA monetarias response missing 'results' array");
+        }
+        JsonNode detalle = results.get(0).get("detalle");
+        if (detalle == null || !detalle.isArray() || detalle.isEmpty()) {
+            throw new IllegalStateException("BCRA monetarias response missing 'detalle' array");
+        }
+        // BCRA v4 monetarias returns 'detalle' ordered from most recent to oldest
+        return detalle.get(0);
+    }
+
+    private JsonNode extractMonetariaField(JsonNode entry, String field) {
+        JsonNode node = entry.get(field);
+        if (node == null || node.isNull()) {
+            throw new IllegalStateException("BCRA monetarias entry missing '" + field + "': " + entry);
+        }
+        return node;
     }
 
     private JsonNode parseJson(String rawResponse) {
@@ -88,53 +149,19 @@ public class BcraClient {
         }
     }
 
-    private JsonNode extractResultsArray(JsonNode root) {
-        JsonNode results = root.get("results");
-        if (results == null || !results.isArray() || results.isEmpty()) {
-            throw new IllegalStateException("BCRA response missing or empty 'results' array");
-        }
-        return results;
-    }
-
-    private JsonNode findLatestEntry(JsonNode results) {
-        // BCRA returns chronological order; last element is most recent
-        return results.get(results.size() - 1);
-    }
-
-    private BcraRate buildRate(JsonNode entry) {
-        LocalDate date = extractDate(entry);
-        BigDecimal value = extractValue(entry);
-        return new BcraRate(date, value);
-    }
-
-    private LocalDate extractDate(JsonNode entry) {
-        JsonNode dateNode = entry.get("fecha");
-        if (dateNode == null || dateNode.isNull()) {
-            dateNode = entry.get("date");
-        }
-        if (dateNode == null || dateNode.isNull()) {
-            throw new IllegalStateException("BCRA entry missing 'fecha' field: " + entry);
-        }
-        String dateStr = dateNode.asText();
+    private LocalDate parseDate(String dateStr) {
         try {
             return LocalDate.parse(dateStr, BCRA_DATE);
         } catch (Exception e) {
-            throw new IllegalStateException("Invalid date format in BCRA response: " + dateStr, e);
+            throw new IllegalStateException("Invalid date in BCRA response: " + dateStr, e);
         }
     }
 
-    private BigDecimal extractValue(JsonNode entry) {
-        JsonNode valueNode = entry.get("valor");
-        if (valueNode == null || valueNode.isNull()) {
-            valueNode = entry.get("value");
-        }
-        if (valueNode == null || valueNode.isNull()) {
-            throw new IllegalStateException("BCRA entry missing 'valor' field: " + entry);
-        }
+    private BigDecimal parseValue(String valueStr) {
         try {
-            return new BigDecimal(valueNode.asText());
+            return new BigDecimal(valueStr);
         } catch (NumberFormatException e) {
-            throw new IllegalStateException("Invalid numeric value in BCRA response: " + valueNode, e);
+            throw new IllegalStateException("Invalid numeric value in BCRA response: " + valueStr, e);
         }
     }
 }
